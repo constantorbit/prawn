@@ -10,7 +10,17 @@ require File.expand_path(File.join(File.dirname(__FILE__),
 filename = File.basename(__FILE__).gsub('.rb', '.pdf')
 Prawn::Example.generate(filename) do
   data = [["This row should be repeated on every new page"]]
-  data += [["..."]] * 30
+  (1..30).each {|i| data += [["row #{i}"]] }
   
   table(data, :header => true)
+
+  move_down 8
+  text "Table with multiple header rows"
+  move_down 8
+
+  data = [["First of 2 rows that should be repeated on every new page"], ["Second of 2 rows that should be repeated on every new page"]]
+  (1..52).each {|i| data += [["row #{i}"]] }
+
+  table(data, :header => 2)
+
 end

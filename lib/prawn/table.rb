@@ -73,12 +73,14 @@ module Prawn
   #   A hash of style options to style all cells. See the documentation on
   #   Prawn::Table::Cell for all cell style options.
   # +header+::
-  #   If set to +true+, the first row will be repeated on every page. The
-  #   header must be included as the first row of your data. Row numbering
+  #   If set to +true+, the first row will be repeated on every page.
+  #   If set to +n+ where +n+ > 0, the first n rows will be repeated on every
+  #   page.
+  #   The header must be included as the first row of your data. Row numbering
   #   (for styling and other row-specific options) always indexes based on
   #   your data array. Whether or not you have a header, row(n) always refers
   #   to the nth element (starting from 0) of the +data+ array.
-  # +column_widths+:: 
+  # +column_widths+::
   #   Sets widths for individual columns. Manually setting widths can give
   #   better results than letting Prawn guess at them, as Prawn's algorithm
   #   for defaulting widths is currently pretty boneheaded. If you experience
@@ -126,7 +128,7 @@ module Prawn
     def initialize(data, document, options={}, &block)
       @pdf = document
       @cells = make_cells(data)
-      @header = false
+      @header = 0
       @epsilon = 1e-9
       options.each { |k, v| send("#{k}=", v) }
 
@@ -198,10 +200,13 @@ module Prawn
     end
 
     # If +true+, designates the first row as a header row to be repeated on
-    # every page. Does not change row numbering -- row numbers always index into
-    # the data array provided, with no modification.
+    # every page. If +n+ (where +n+ > 0), designates the first +n+ rows as
+    # header rows to be repeated.  Does not change row numbering -- row numbers
+    # always index into the data array provided, with no modification.
     #
-    attr_writer :header
+    def header=(rows)
+      @header = rows.respond_to?(:to_i) ? rows : (rows ? 1 : 0)
+    end
 
     # Accepts an Array of alternating row colors to stripe the table.
     #
@@ -267,8 +272,8 @@ module Prawn
 
           # If there isn't enough room left on the page to fit the first data row
           # (excluding the header), start the table on the next page.
-          needed_height = row(0).height
-          needed_height += row(1).height if @header
+          needed_height = row(0..@header).height
+          #needed_height += row(1).height if @header
           if needed_height > @pdf.y - ref_bounds.absolute_bottom
             @pdf.bounds.move_past_bottom
             offset = @pdf.y
@@ -306,10 +311,10 @@ module Prawn
           y -= @pdf.bounds.absolute_bottom
 
           # Set background color, if any.
-          if @row_colors && (!@header || cell.row > 0)
+          if @row_colors && (cell.row >= @header)
             # Ensure coloring restarts on every page (to make sure the header
             # and first row of a page are not colored the same way).
-            index = cell.row - [started_new_page_at_row, @header ? 1 : 0].max
+            index = cell.row - [started_new_page_at_row, @header].max
             cell.background_color ||= @row_colors[index % @row_colors.length]
           end
 
@@ -472,13 +477,15 @@ module Prawn
     # If the table has a header, draw it at the current position.
     #
     def draw_header
-      if @header
+      if @header > 0
         y = @pdf.cursor
-        row(0).each do |cell|
+        row(0..(@header-1)).each do |cell|
           cell.y = y
           cell.draw
+          y -= cell.height
+          @pdf.move_cursor_to(y)
         end
-        @pdf.move_cursor_to(y - row(0).height)
+        #@pdf.move_cursor_to(y - row(0..(@header-1)).height)
       end
     end
 
