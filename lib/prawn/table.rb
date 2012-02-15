@@ -479,12 +479,22 @@ module Prawn
     def draw_header
       if @header > 0
         y = @pdf.cursor
-        row(0..(@header-1)).each do |cell|
-          cell.y = y
-          cell.draw
-          y -= cell.height
-          @pdf.move_cursor_to(y)
+
+        (0..(@header-1)).each do |row_number|
+          row(row_number).each do |cell|
+            cell.y = y
+            cell.draw
+          end
+          y -= row(row_number).height
         end
+        @pdf.move_cursor_to(y)
+
+        #row(0..(@header-1)).each do |cell|
+        #  cell.y = y
+        #  cell.draw
+        #  y -= cell.height
+        #  @pdf.move_cursor_to(y)
+        #end
         #@pdf.move_cursor_to(y - row(0..(@header-1)).height)
       end
     end

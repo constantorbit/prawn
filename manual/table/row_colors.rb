@@ -17,4 +17,14 @@ Prawn::Example.generate(filename) do
   data += [["..."]] * 10
   
   table(data, :row_colors => ["F0F0F0", "FFFFCC"])
+
+  text 'Multi-row header, spanning pages'
+
+  data = [['Header 1'],
+    ['Header 2']]
+
+  (1..30).each {|i| data += [["row #{i}"]] }
+
+  table(data, :row_colors => ["F0F0F0", "FFFFCC"], :header => 2)
+
 end
